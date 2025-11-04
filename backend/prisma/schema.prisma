@@ -1,0 +1,99 @@
+generator client {
+  provider      = "prisma-client"
+  output        = "../generated/prisma"
+  moduleFormat  = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Device {
+  @@map("Devices")
+  DeviceID       Int     @id @default(autoincrement())
+  DeviceName     String
+  DeviceLocation String? @db.VarChar(100)
+  IPAddress      String? @db.VarChar(15)
+
+  PH_Readings         PH_Reading[]
+  Temperature_Readings Temperature_Reading[]
+  TDS_Readings        TDS_Reading[]
+  GPS_Readings        GPS_Reading[]
+  Turbidity_Readings  Turbidity_Reading[]
+  All_Sensor_Readings All_Sensor_Reading[]
+}
+
+model PH_Reading {
+  @@map("PH_Readings")
+  ReadingID  BigInt   @id @default(autoincrement())
+  DeviceID   Int
+  SensorName String   @default("pH_Sensor") @db.VarChar(50)
+  PH_Value   Float
+  RecordedAt DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}
+
+model Temperature_Reading {
+  @@map("Temperature_Readings")
+  ReadingID         BigInt   @id @default(autoincrement())
+  DeviceID          Int
+  SensorName        String   @default("Temperature_Sensor") @db.VarChar(50)
+  Temperature_Value Float
+  RecordedAt        DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}
+
+model TDS_Reading {
+  @@map("TDS_Readings")
+  ReadingID  BigInt   @id @default(autoincrement())
+  DeviceID   Int
+  SensorName String   @default("TDS_Sensor") @db.VarChar(50)
+  TDS_Value  Float
+  RecordedAt DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}
+
+model GPS_Reading {
+  @@map("GPS_Readings")
+  ReadingID  BigInt   @id @default(autoincrement())
+  DeviceID   Int
+  SensorName String   @default("GPS_Sensor") @db.VarChar(50)
+  Latitude   Float
+  Longitude  Float
+  Altitude   Float?
+  RecordedAt DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}
+
+model Turbidity_Reading {
+  @@map("Turbidity_Readings")
+  ReadingID   BigInt   @id @default(autoincrement())
+  DeviceID    Int
+  SensorName  String?  @db.VarChar(50) @default("Turbidity_Sensor")
+  NTU_Value   Float
+  Voltage     Float? 
+  RecordedAt  DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}
+
+model All_Sensor_Reading {
+  @@map("All_Sensor_Reading")
+  ReadingID     BigInt   @id @default(autoincrement())
+  DeviceID      Int
+  SensorType    String   @db.VarChar(50)
+  SensorName    String?  @db.VarChar(50)
+  ReadingValue1 Float?
+  ReadingValue2 Float?
+  ReadingValue3 Float?
+  Unit          String?  @db.VarChar(20)
+  RecordedAt    DateTime @default(now())
+
+  Device Device @relation(fields: [DeviceID], references: [DeviceID], onDelete: Cascade)
+}

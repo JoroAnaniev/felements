@@ -27,7 +27,7 @@ model Device {
 
 model PH_Reading {
   @@map("PH_Readings")
-  ReadingID  BigInt   @id @default(autoincrement())
+  ReadingID  Int   @id @default(autoincrement())
   DeviceID   Int
   SensorName String   @default("pH_Sensor") @db.VarChar(50)
   PH_Value   Float
@@ -38,7 +38,7 @@ model PH_Reading {
 
 model Temperature_Reading {
   @@map("Temperature_Readings")
-  ReadingID         BigInt   @id @default(autoincrement())
+  ReadingID         Int   @id @default(autoincrement())
   DeviceID          Int
   SensorName        String   @default("Temperature_Sensor") @db.VarChar(50)
   Temperature_Value Float
@@ -49,7 +49,7 @@ model Temperature_Reading {
 
 model TDS_Reading {
   @@map("TDS_Readings")
-  ReadingID  BigInt   @id @default(autoincrement())
+  ReadingID  Int   @id @default(autoincrement())
   DeviceID   Int
   SensorName String   @default("TDS_Sensor") @db.VarChar(50)
   TDS_Value  Float
@@ -60,7 +60,7 @@ model TDS_Reading {
 
 model GPS_Reading {
   @@map("GPS_Readings")
-  ReadingID  BigInt   @id @default(autoincrement())
+  ReadingID  Int   @id @default(autoincrement())
   DeviceID   Int
   SensorName String   @default("GPS_Sensor") @db.VarChar(50)
   Latitude   Float
@@ -73,7 +73,7 @@ model GPS_Reading {
 
 model Turbidity_Reading {
   @@map("Turbidity_Readings")
-  ReadingID   BigInt   @id @default(autoincrement())
+  ReadingID   Int   @id @default(autoincrement())
   DeviceID    Int
   SensorName  String?  @db.VarChar(50) @default("Turbidity_Sensor")
   NTU_Value   Float
@@ -85,7 +85,7 @@ model Turbidity_Reading {
 
 model All_Sensor_Reading {
   @@map("All_Sensor_Reading")
-  ReadingID     BigInt   @id @default(autoincrement())
+  ReadingID     Int   @id @default(autoincrement())
   DeviceID      Int
   SensorType    String   @db.VarChar(50)
   SensorName    String?  @db.VarChar(50)

@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import React, { useState, useRef, useEffect } from "react";
 import { BuoyData, Page } from "../App";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { Button } from "./ui/button";

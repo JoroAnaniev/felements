@@ -8,7 +8,7 @@ import { Reports } from './components/Reports';
 import { FullscreenMap } from './components/FullscreenMap';
 import { AdvancedAnalytics } from './components/AdvancedAnalytics';
 import { DataSimulationEngine, SimulationConfig } from './components/DataSimulationEngine';
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 
 // Types
 export type Page = 'login' | 'register' | 'dashboard' | 'logging' | 'reports' | 'fullscreen-map' | 'analytics' | 'profile';

@@ -329,21 +329,6 @@ export function SensorDetailsPanel({
             </div>
           </div>
 
-          {/* Phosphate */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm text-gray-700">Phosphate</h4>
-              <span className={`px-2 py-1 rounded text-xs ${getStatusBadge(getSensorStatus(currentValues.phosphate, 'phosphate'))}`}>
-                {getSensorStatus(currentValues.phosphate, 'phosphate')}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 mb-2">Nutrient levels</p>
-            <div className="flex items-center justify-between">
-              <span className="text-lg text-gray-900">{currentValues.phosphate !== undefined ? `${currentValues.phosphate} mg/L` : '—'}</span>
-              {getTrendIcon()}
-            </div>
-          </div>
-
           {/* Temperature */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">

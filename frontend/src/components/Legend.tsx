@@ -88,7 +88,7 @@ export function Legend() {
             <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">• TSS - Total Suspended Solids</p>
+                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">•°C - Temprature</p>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Measure of particles suspended in water</p>
@@ -97,7 +97,7 @@ export function Legend() {
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">• DO - Dissolved Oxygen</p>
+                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">• NTU - Turbidity</p>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Amount of oxygen available for aquatic life</p>
@@ -115,7 +115,7 @@ export function Legend() {
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">• Phosphate - Nutrient levels</p>
+                  <p className="cursor-help hover:text-gray-900 dark:hover:text-gray-200">•TDS - Total Dissolved Solids</p>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>High levels can cause algae blooms</p>

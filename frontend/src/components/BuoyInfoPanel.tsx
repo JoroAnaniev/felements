@@ -130,8 +130,8 @@
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex space-x-4">
                     <div className="text-center">
-                      <p className="text-xs text-gray-600">DO</p>
-                      <p className="text-sm font-medium text-gray-900">{buoy.sensors.do}</p>
+                      <p className="text-xs text-gray-600">Turbidity</p>
+                      <p className="text-sm font-medium text-gray-900">{buoy.sensors.do} NTU</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-gray-600">pH</p>

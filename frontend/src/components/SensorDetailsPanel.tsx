@@ -20,7 +20,7 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
   const exportSensorData = () => {
     try {
       // Generate comprehensive CSV data
-      const csvHeader = 'Date,Time,Buoy Name,Zone,Status,Dissolved Oxygen (mg/L),pH Level,TSS (mg/L),Phosphate (mg/L),Temperature (°C)\n';
+      const csvHeader = 'Date,Time,Buoy Name,Zone,Status,Turbidity (NTU),pH Level,TSS (mg/L),Phosphate (mg/L),Temperature (°C)\n';
       
       // Current reading
       const now = new Date();
@@ -139,7 +139,7 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
   const getSensorStatus = (value: number, type: string) => {
     // Define thresholds for different sensor types
     switch (type) {
-      case 'do': // Dissolved Oxygen
+      case 'do': // Turbidity
         if (value >= 7) return 'good';
         if (value >= 5) return 'warning';
         return 'critical';
@@ -147,7 +147,7 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
         if (value >= 7.0 && value <= 8.0) return 'good';
         if (value >= 6.5 && value <= 8.5) return 'warning';
         return 'critical';
-      case 'tss': // Total Suspended Solids
+      case 'tss': // Total Dissolved Solids
         if (value <= 3000) return 'good';
         if (value <= 5000) return 'warning';
         return 'critical';
@@ -306,10 +306,10 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
       <div className="p-6">
         <h3 className="text-lg text-gray-900 mb-4">Current Readings</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Dissolved Oxygen */}
+          {/* Turbidity */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm text-gray-700">Dissolved Oxygen</h4>
+              <h4 className="text-sm text-gray-700">Turbidity</h4>
               <span className={`px-2 py-1 rounded text-xs ${getStatusBadge(getSensorStatus(buoy.sensors.do, 'do'))}`}>
                 {getSensorStatus(buoy.sensors.do, 'do')}
               </span>
@@ -336,10 +336,10 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
             </div>
           </div>
 
-          {/* Total Suspended Solids */}
+          {/* Total Dissolved Solids */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm text-gray-700">Total Suspended Solids</h4>
+              <h4 className="text-sm text-gray-700">Total Disolved Solids</h4>
               <span className={`px-2 py-1 rounded text-xs ${getStatusBadge(getSensorStatus(buoy.sensors.tss, 'tss'))}`}>
                 {getSensorStatus(buoy.sensors.tss, 'tss')}
               </span>
@@ -435,9 +435,9 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
 
         {/* 7-Day Trend Charts */}
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Dissolved Oxygen 7-Day Trend */}
+          {/* Turbidity 7-Day Trend */}
           <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="text-sm text-gray-700 mb-3">7-Day Dissolved Oxygen Trend</h4>
+            <h4 className="text-sm text-gray-700 mb-3">7-Day Turbidity Trend</h4>
             <div className="h-40 bg-white rounded border">
               {trendData && trendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -472,7 +472,7 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
                         month: 'short', 
                         day: 'numeric' 
                       })}
-                      formatter={(value: number) => [`${value} mg/L`, 'Dissolved Oxygen']}
+                      formatter={(value: number) => [`${value} mg/L`, 'Turbidity']}
                     />
                     <Area
                       type="monotone"
@@ -586,7 +586,7 @@ export function SensorDetailsPanel({ buoy, actionLogs = [], buoys = [], onClose,
                         month: 'short', 
                         day: 'numeric' 
                       })}
-                      formatter={(value: number) => [`${value.toLocaleString()} mg/L`, 'Total Suspended Solids']}
+                      formatter={(value: number) => [`${value.toLocaleString()} mg/L`, 'Total Dissolved Solids']}
                     />
                     <Area
                       type="monotone"

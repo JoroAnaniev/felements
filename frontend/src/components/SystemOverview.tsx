@@ -6,9 +6,10 @@ import { Zone } from './MainDashboard';
 interface SystemOverviewProps {
   buoys: BuoyData[];
   selectedZone: Zone;
+  sensor?: any; // or better: SensorApiResponse if you have the type
 }
 
-export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
+export function SystemOverview({ buoys, selectedZone, sensor }: SystemOverviewProps) {
   // Filter buoys based on selected zone
   const filteredBuoys = selectedZone === 'overall' 
     ? buoys 
@@ -54,7 +55,9 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
     },
     {
       title: 'Avg Temperature',
-      value: `${avgTemperature.toFixed(1)}°C`,
+      value: sensor?.Temperature_Readings?.[0]?.Temperature_Value
+        ? `${sensor.Temperature_Readings[0].Temperature_Value}°C`
+        : '—',
       description: 'Current water temperature',
       icon: (
         <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,15 +68,34 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
     },
     {
       title: 'Avg pH Level',
-      value: avgPH.toFixed(1),
+      value: sensor?.PH_Readings?.[0]?.PH_Value
+        ? sensor.PH_Readings[0].PH_Value.toFixed(2)
+        : '—',
       description: 'Water acidity level',
       icon: (
-        <svg className={`w-6 h-6 ${avgPH < 6.5 || avgPH > 8.5 ? 'text-orange-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        <svg
+          className={`w-6 h-6 ${
+            sensor?.PH_Readings?.[0]?.PH_Value &&
+            (sensor.PH_Readings[0].PH_Value < 6.5 || sensor.PH_Readings[0].PH_Value > 8.5)
+              ? 'text-orange-600'
+              : 'text-green-600'
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+          />
         </svg>
       ),
       color: avgPH < 6.5 || avgPH > 8.5 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'
-    },
+
+    }
+    ,
     {
       title: 'Avg Dissolved O₂',
       value: `${avgDO.toFixed(1)} mg/L`,
@@ -84,7 +106,7 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
         </svg>
       ),
       color: avgDO < 5 ? 'border-red-200 bg-red-50' : avgDO < 7 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'
-    },
+    },  
     {
       title: 'Monitoring Points',
       value: filteredBuoys.length.toString(),

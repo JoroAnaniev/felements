@@ -79,6 +79,17 @@ export function MainDashboard({
 
   const [sensor, setSensor] = useState<SensorApiResponse | null>(null);
 
+  const lastReading = (arr?: any[]) => {
+    if (!arr || arr.length === 0) return undefined;
+    return arr[arr.length - 1]; // assumes newest is last; change to [0] if newest is index 0
+  };
+
+  const fmt = (v: any, dec = 1) => {
+    if (v === null || v === undefined) return '—';
+    const n = Number(v);
+    if (Number.isNaN(n)) return '—';
+    return n.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  };
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -401,7 +412,7 @@ export function MainDashboard({
                     </TabsTrigger>
                   </TabsList>
                   <TabsContent value="overview" className="mt-0">
-                    <SystemOverview buoys={filteredBuoys} selectedZone={selectedZone} />
+                    <SystemOverview buoys={filteredBuoys} selectedZone={selectedZone} sensor={sensor} />
                   </TabsContent>
                   <TabsContent value="hyacinth" className="mt-0">
                     <WaterHyacinthPerformance

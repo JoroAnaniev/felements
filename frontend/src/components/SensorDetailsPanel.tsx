@@ -7,6 +7,7 @@ import { DiagnosticsPanel } from './DiagnosticsPanel';
 import { X, Download, FileText, TrendingUp, TrendingDown, Minus, Bell, AlertTriangle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { toast } from "sonner@2.0.3";
+import { SensorApiResponse } from '../types/SensorApiResponse.type';
 
 interface SensorDetailsPanelProps {
   buoy: BuoyData;
@@ -14,6 +15,7 @@ interface SensorDetailsPanelProps {
   buoys?: BuoyData[];
   onClose?: () => void;
   onNavigateToActionLog?: (buoyId: string) => void;
+  sensor: SensorApiResponse | null;
 }
 
 // This component displays values using the buoy's readings if present.
@@ -24,43 +26,11 @@ export function SensorDetailsPanel({
   actionLogs = [],
   buoys = [],
   onClose,
-  onNavigateToActionLog
+  onNavigateToActionLog,
+  sensor
 }: SensorDetailsPanelProps) {
-  const [mirrorSensor, setMirrorSensor] = useState<any | null>(null);
-  const [loadingMirror, setLoadingMirror] = useState(false);
 
-  // Fetch device 1 as fallback mirror when buoy lacks readings
-  useEffect(() => {
-    let cancelled = false;
-    const fetchMirror = async () => {
-      // Only fetch if buoy does not have reading arrays
-      const hasReadings = Boolean(
-        (buoy as any)?.PH_Readings?.length ||
-        (buoy as any)?.TDS_Readings?.length ||
-        (buoy as any)?.Temperature_Readings?.length ||
-        (buoy as any)?.Turbidity_Readings?.length
-      );
-      if (hasReadings) return;
-
-      setLoadingMirror(true);
-      try {
-        const res = await axios.get('/api/devices/1?includeReadings=1');
-        if (!cancelled) {
-          setMirrorSensor(res.data);
-          setLoadingMirror(false);
-          console.debug('Mirror sensor loaded', res.data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Failed loading mirror sensor', err);
-          setLoadingMirror(false);
-        }
-      }
-    };
-
-    fetchMirror();
-    return () => { cancelled = true; };
-  }, [buoy]);
+  const [currentValues, setCurrentValues] = useState<>();
 
   // NEW: choose index for newest reading. Set to true if newest is last element.
   const newestIndexToLast = false; // your code previously used [0], switch to true if needed
@@ -77,33 +47,35 @@ export function SensorDetailsPanel({
     return Number.isNaN(num) ? undefined : num;
   };
 
-  // Build source readings either from this buoy or mirrored sensor
-  const source = {
-    PH_Readings: (buoy as any)?.PH_Readings ?? (mirrorSensor as any)?.PH_Readings ?? [],
-    TDS_Readings: (buoy as any)?.TDS_Readings ?? (mirrorSensor as any)?.TDS_Readings ?? [],
-    Temperature_Readings: (buoy as any)?.Temperature_Readings ?? (mirrorSensor as any)?.Temperature_Readings ?? [],
-    Turbidity_Readings: (buoy as any)?.Turbidity_Readings ?? (mirrorSensor as any)?.Turbidity_Readings ?? [],
-    // optional scalar fallbacks
-    sensors: (buoy as any)?.sensors ?? (mirrorSensor as any)?.sensors ?? {}
-  };
-
   // currentValues pulled consistently from source arrays
-  const currentValues = {
-    turbidity: getReading(source.Turbidity_Readings, 'NTU_Value'),
-    ph: getReading(source.PH_Readings, 'PH_Value'),
-    tds: getReading(source.TDS_Readings, 'TDS_Value'),
-    temperature: getReading(source.Temperature_Readings, 'Temperature_Value'),
-    phosphate: typeof source.sensors?.phosphate !== 'undefined' ? Number(source.sensors.phosphate) : undefined,
-    nitrogen: typeof source.sensors?.nitrogen !== 'undefined' ? Number(source.sensors.nitrogen) : undefined,
-    nitrate: typeof source.sensors?.nitrate !== 'undefined' ? Number(source.sensors.nitrate) : undefined,
-    ammonia: typeof source.sensors?.ammonia !== 'undefined' ? Number(source.sensors.ammonia) : undefined
-  };
+  useEffect(() => {
+    // Build source readings either from this buoy or mirrored sensor
+    const source = {
+      PH_Readings: (buoy as any)?.PH_Readings ?? (sensor as any)?.PH_Readings ?? [],
+      TDS_Readings: (buoy as any)?.TDS_Readings ?? (sensor as any)?.TDS_Readings ?? [],
+      Temperature_Readings: (buoy as any)?.Temperature_Readings ?? (sensor as any)?.Temperature_Readings ?? [],
+      Turbidity_Readings: (buoy as any)?.Turbidity_Readings ?? (sensor as any)?.Turbidity_Readings ?? [],
+      // optional scalar fallbacks
+      sensors: (buoy as any)?.sensors ?? (sensor as any)?.sensors ?? {}
+    };
+
+    setCurrentValues({
+      turbidity: getReading(source.Turbidity_Readings, 'NTU_Value'),
+      ph: getReading(source.PH_Readings, 'PH_Value'),
+      tds: getReading(source.TDS_Readings, 'TDS_Value'),
+      temperature: getReading(source.Temperature_Readings, 'Temperature_Value'),
+      phosphate: typeof source.sensors?.phosphate !== 'undefined' ? Number(source.sensors.phosphate) : undefined,
+      nitrogen: typeof source.sensors?.nitrogen !== 'undefined' ? Number(source.sensors.nitrogen) : undefined,
+      nitrate: typeof source.sensors?.nitrate !== 'undefined' ? Number(source.sensors.nitrate) : undefined,
+      ammonia: typeof source.sensors?.ammonia !== 'undefined' ? Number(source.sensors.ammonia) : undefined
+    });
+  }, [sensor])
 
   // Trend generators - deterministic based on currentValues, not random per-buoy
   const generateTrendData = () => {
     const days = [
       // static placeholders; replace with real history if available
-      '2024-09-25','2024-09-26','2024-09-27','2024-09-28','2024-09-29','2024-09-30','2024-10-01'
+      '2024-09-25', '2024-09-26', '2024-09-27', '2024-09-28', '2024-09-29', '2024-09-30', '2024-10-01'
     ];
     const base = {
       do: currentValues.turbidity ?? 0,
@@ -234,7 +206,7 @@ export function SensorDetailsPanel({
             <div className="flex items-center space-x-3 mt-2">
               <span className={`px-3 py-1 rounded-full text-sm capitalize ${getStatusBadge(buoy.status)}`}>{buoy.status}</span>
               <span className="text-sm text-gray-500">Last updated: {(buoy as any).lastUpdate ?? '—'}</span>
-              {loadingMirror && <span className="text-xs text-gray-400 ml-2">loading mirror...</span>}
+              {!sensor && <span className="text-xs text-gray-400 ml-2">loading mirror...</span>}
             </div>
           </div>
 
@@ -250,11 +222,10 @@ export function SensorDetailsPanel({
               }}
               variant={buoy.status === 'critical' ? 'destructive' : buoy.status === 'warning' ? 'outline' : 'default'}
               size="sm"
-              className={`flex items-center space-x-2 ${
-                buoy.status === 'critical' ? 'gradient-danger text-white' :
+              className={`flex items-center space-x-2 ${buoy.status === 'critical' ? 'gradient-danger text-white' :
                 buoy.status === 'warning' ? 'border-orange-300 text-orange-700' :
-                'bg-blue-600 text-white'
-              }`}
+                  'bg-blue-600 text-white'
+                }`}
             >
               {buoy.status === 'critical' || buoy.status === 'warning' ? <AlertTriangle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
               <span className="hidden sm:inline">{buoy.status === 'critical' ? 'Critical Alerts' : buoy.status === 'warning' ? 'Warning Alerts' : 'Notifications'}</span>
@@ -356,8 +327,8 @@ export function SensorDetailsPanel({
                   <AreaChart data={trendData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
                     <defs>
                       <linearGradient id="doGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4a7c59" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#4a7c59" stopOpacity={0.1}/>
+                        <stop offset="5%" stopColor="#4a7c59" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#4a7c59" stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e1ede1" />

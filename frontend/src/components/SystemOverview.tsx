@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BuoyData } from '../App';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Zone } from './MainDashboard';
+import { SensorApiResponse } from '../types/SensorApiResponse.type';
 
 interface SystemOverviewProps {
   buoys: BuoyData[];
   selectedZone: Zone;
+  sensor?: SensorApiResponse; // or better: SensorApiResponse if you have the type
 }
 
-export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
+export function SystemOverview({ buoys, selectedZone, sensor }: SystemOverviewProps) {
   // Filter buoys based on selected zone
   const filteredBuoys = selectedZone === 'overall' 
     ? buoys 
@@ -17,20 +19,19 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
   const goodBuoys = filteredBuoys.filter(b => b.status === 'good').length;
   const warningBuoys = filteredBuoys.filter(b => b.status === 'warning').length;
   const criticalBuoys = filteredBuoys.filter(b => b.status === 'critical').length;
-  const totalAlerts = filteredBuoys.reduce((acc, buoy) => acc + (buoy.alerts?.length ?? 0), 0);
+  const totalAlerts = filteredBuoys.reduce((acc, buoy) => acc + buoy.alerts.length, 0);
 
   const avgTemperature = filteredBuoys.length > 0 
-    ? filteredBuoys.reduce((acc, buoy) => acc + (buoy.sensors.temperature ?? 0), 0) / filteredBuoys.length 
+    ? filteredBuoys.reduce((acc, buoy) => acc + buoy.sensors.temperature, 0) / filteredBuoys.length 
     : 0;
   const avgPH = filteredBuoys.length > 0 
-    ? filteredBuoys.reduce((acc, buoy) => acc + (buoy.sensors.ph ?? 0), 0) / filteredBuoys.length 
+    ? filteredBuoys.reduce((acc, buoy) => acc + buoy.sensors.ph, 0) / filteredBuoys.length 
     : 0;
   const avgDO = filteredBuoys.length > 0 
-    ? filteredBuoys.reduce((acc, buoy) => acc + (buoy.sensors.do ?? 0), 0) / filteredBuoys.length 
+    ? filteredBuoys.reduce((acc, buoy) => acc + buoy.sensors.do, 0) / filteredBuoys.length 
     : 0;
 
-  // Build card data from current filtered buoys
-  const buildCards = () => [
+  const cards = [
     {
       title: 'System Status',
       value: `${goodBuoys}/${filteredBuoys.length} Good`,
@@ -55,7 +56,9 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
     },
     {
       title: 'Avg Temperature',
-      value: `${avgTemperature.toFixed(1)}°C`,
+      value: sensor?.Temperature_Readings?.[0]?.Temperature_Value
+        ? `${sensor.Temperature_Readings[0].Temperature_Value}°C`
+        : '—',
       description: 'Current water temperature',
       icon: (
         <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -66,18 +69,39 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
     },
     {
       title: 'Avg pH Level',
-      value: avgPH.toFixed(1),
+      value: sensor?.PH_Readings?.[0]?.PH_Value
+        ? sensor.PH_Readings[0].PH_Value.toFixed(2)
+        : '—',
       description: 'Water acidity level',
       icon: (
-        <svg className={`w-6 h-6 ${avgPH < 6.5 || avgPH > 8.5 ? 'text-orange-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+        <svg
+          className={`w-6 h-6 ${
+            sensor?.PH_Readings?.[0]?.PH_Value &&
+            (sensor.PH_Readings[0].PH_Value < 6.5 || sensor.PH_Readings[0].PH_Value > 8.5)
+              ? 'text-orange-600'
+              : 'text-green-600'
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+          />
         </svg>
       ),
       color: avgPH < 6.5 || avgPH > 8.5 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'
-    },
-    {
+
+    }
+    ,
+     {
       title: 'Avg Turbidity',
-      value: `${avgDO.toFixed(1)} NTU`,
+      value: sensor?.Turbidity_Readings?.[0]?.NTU_Value
+        ? sensor.Turbidity_Readings[0].NTU_Value.toFixed(2)
+        : '—',
       description: 'Turbidity (NTU)',
       icon: (
         <svg className={`w-6 h-6 ${avgDO < 5 ? 'text-red-600' : avgDO < 7 ? 'text-orange-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,7 +109,7 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
         </svg>
       ),
       color: avgDO < 5 ? 'border-red-200 bg-red-50' : avgDO < 7 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'
-    },
+    },  
     {
       title: 'Monitoring Points',
       value: filteredBuoys.length.toString(),
@@ -100,27 +124,9 @@ export function SystemOverview({ buoys, selectedZone }: SystemOverviewProps) {
     }
   ];
 
-  // Stable display state to prevent rapid flicker when buoys prop updates fast
-  const [displayCards, setDisplayCards] = useState(() => buildCards());
-
-  useEffect(() => {
-    // Rebuild cards based on latest filteredBuoys but update only once per second
-    const update = () => {
-      setDisplayCards(buildCards());
-    };
-
-    // Update immediately, but then throttle subsequent rapid updates
-    update();
-    const timer = setInterval(update, 1000); // 1000 ms throttle. Adjust if needed.
-
-    return () => clearInterval(timer);
-    // We intentionally depend on derived values so update runs when filteredBuoys changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredBuoys.length, goodBuoys, warningBuoys, criticalBuoys, totalAlerts, avgTemperature, avgPH, avgDO]);
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {displayCards.map((card, index) => (
+      {cards.map((card, index) => (
         <Card key={index} className={`${card.color} border`}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm text-gray-700">{card.title}</CardTitle>

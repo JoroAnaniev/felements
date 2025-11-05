@@ -380,7 +380,7 @@ export function MainDashboard({
           </div>
 
           {/* System Performance with Tabs */}
-          <div className='flex flex-col'>
+          {/* <div className='flex flex-col'>
             <span>{sensor?.DeviceName}</span>
             <span>{sensor?.DeviceID}</span>
             <span>{sensor?.DeviceLocation}</span>
@@ -390,7 +390,10 @@ export function MainDashboard({
             <span>GPS: {sensor?.GPS_Readings[0]?.Latitude}, {sensor?.GPS_Readings[0]?.Longitude}</span>
             <span>Temperature: {sensor?.Temperature_Readings[0]?.Temperature_Value}</span>
             <span>Turbidity: {sensor?.Turbidity_Readings[0]?.NTU_Value} NTU, {sensor?.Turbidity_Readings[0]?.Voltage} V</span>
-          </div>
+          </div> */}
+          <div className="flex flex-col">
+  <pre>{JSON.stringify(sensor, null, 2)}</pre>
+</div>
           <div className="mb-6">
             <Card className="glass-card border-0 shadow-professional">
               <CardHeader className="pb-2">
@@ -581,6 +584,7 @@ export function MainDashboard({
                       localStorage.setItem('preselectedBuoyId', buoyId);
                       onNavigate('logging');
                     }}
+                    sensor={sensor}
                   />
                 </div>
               </div>

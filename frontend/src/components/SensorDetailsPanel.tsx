@@ -29,11 +29,8 @@ export function SensorDetailsPanel({
   onNavigateToActionLog,
   sensor
 }: SensorDetailsPanelProps) {
-
-  const [currentValues, setCurrentValues] = useState<>();
-
-  // NEW: choose index for newest reading. Set to true if newest is last element.
   const newestIndexToLast = false; // your code previously used [0], switch to true if needed
+
 
   const getReading = (arr?: any[], key?: string) => {
     if (!arr || !Array.isArray(arr) || arr.length === 0) return undefined;
@@ -46,6 +43,29 @@ export function SensorDetailsPanel({
     const num = Number(raw);
     return Number.isNaN(num) ? undefined : num;
   };
+
+  const source = {
+    PH_Readings: (buoy as any)?.PH_Readings ?? (sensor as any)?.PH_Readings ?? [],
+    TDS_Readings: (buoy as any)?.TDS_Readings ?? (sensor as any)?.TDS_Readings ?? [],
+    Temperature_Readings: (buoy as any)?.Temperature_Readings ?? (sensor as any)?.Temperature_Readings ?? [],
+    Turbidity_Readings: (buoy as any)?.Turbidity_Readings ?? (sensor as any)?.Turbidity_Readings ?? [],
+    // optional scalar fallbacks
+    sensors: (buoy as any)?.sensors ?? (sensor as any)?.sensors ?? {}
+  };
+
+  const [currentValues, setCurrentValues] = useState({
+    turbidity: getReading(source.Turbidity_Readings, 'NTU_Value'),
+    ph: getReading(source.PH_Readings, 'PH_Value'),
+    tds: getReading(source.TDS_Readings, 'TDS_Value'),
+    temperature: getReading(source.Temperature_Readings, 'Temperature_Value'),
+    phosphate: typeof source.sensors?.phosphate !== 'undefined' ? Number(source.sensors.phosphate) : undefined,
+    nitrogen: typeof source.sensors?.nitrogen !== 'undefined' ? Number(source.sensors.nitrogen) : undefined,
+    nitrate: typeof source.sensors?.nitrate !== 'undefined' ? Number(source.sensors.nitrate) : undefined,
+    ammonia: typeof source.sensors?.ammonia !== 'undefined' ? Number(source.sensors.ammonia) : undefined
+  });
+
+
+
 
   // currentValues pulled consistently from source arrays
   useEffect(() => {

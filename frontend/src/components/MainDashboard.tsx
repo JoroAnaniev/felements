@@ -76,7 +76,7 @@ export function MainDashboard({
   const zoneContextRef = useRef<HTMLDivElement>(null);
 
 
-
+  const [overrideBuoys, setOverrideBuoys] = useState<BuoyData[]>(buoys);
   const [sensor, setSensor] = useState<SensorApiResponse | null>(null);
 
   const lastReading = (arr?: any[]) => {
@@ -122,8 +122,21 @@ export function MainDashboard({
     };
   }, []);
 
+
+  useEffect(() => {
+    if (sensor) {
+      setOverrideBuoys(prevBuoys => prevBuoys.map(buoy => {
+        buoy.sensors.temperature = sensor.Temperature_Readings[0]?.Temperature_Value ?? buoy.sensors.temperature;
+        buoy.sensors.ph = sensor.PH_Readings[0]?.PH_Value ?? buoy.sensors.ph;
+        buoy.sensors.do = sensor.Turbidity_Readings[0]?.NTU_Value ?? buoy.sensors.do;
+        return buoy;
+      }));
+    }
+
+  }, [sensor])
+
   // Filter buoys based on selected zone and alert filter
-  const filteredBuoys = buoys
+  const filteredBuoys = overrideBuoys
     .filter(buoy => {
       // Zone filter
       if (selectedZone !== 'overall' && buoy.zone !== selectedZone) {
@@ -392,8 +405,8 @@ export function MainDashboard({
             <span>Turbidity: {sensor?.Turbidity_Readings[0]?.NTU_Value} NTU, {sensor?.Turbidity_Readings[0]?.Voltage} V</span>
           </div> */}
           <div className="flex flex-col">
-  <pre>{JSON.stringify(sensor, null, 2)}</pre>
-</div>
+            <pre>{JSON.stringify(sensor, null, 2)}</pre>
+          </div>
           <div className="mb-6">
             <Card className="glass-card border-0 shadow-professional">
               <CardHeader className="pb-2">

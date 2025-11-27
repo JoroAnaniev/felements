@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { useEffect } from 'react';
 import { 
   LineChart, 
   Line, 
@@ -24,7 +25,7 @@ import {
   PieChart,
   Pie
 } from 'recharts';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -48,6 +49,7 @@ import { BuoyData } from '../App';
 import { PredictiveInsight } from './DataSimulationEngine';
 import { MobileLayout } from './MobileLayout';
 import { Page, ActionLog } from '../App';
+
 
 interface AdvancedAnalyticsProps {
   buoys: BuoyData[];
@@ -93,6 +95,14 @@ interface PredictionModel {
   trend: 'improving' | 'stable' | 'deteriorating';
 }
 
+interface HyacinthForecastPoint {
+  date: string;
+  coverage: number;
+  lower: number;
+  upper: number;
+}
+
+
 export function AdvancedAnalytics({ 
   buoys, 
   actionLogs,
@@ -108,6 +118,12 @@ export function AdvancedAnalytics({
   const [selectedAnalysis, setSelectedAnalysis] = useState<'overview' | 'correlations' | 'predictions' | 'quality'>('overview');
   const [selectedBuoy, setSelectedBuoy] = useState<string>('all');
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
+  const [forecast, setForecast] = useState<HyacinthForecastPoint[]>([]);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastError, setForecastError] = useState<string | null>(null);
+
+  
+
 
   // Define calculateCorrelation function first to avoid hoisting issues
   const calculateCorrelation = useCallback((x: number[], y: number[]): number => {
@@ -132,6 +148,41 @@ export function AdvancedAnalytics({
       console.error('Error calculating correlation:', error);
       return 0;
     }
+  }, []);
+
+  useEffect(() => {
+    async function loadForecast() {
+      try {
+        setForecastLoading(true);
+        setForecastError(null);
+
+        // Adjust this URL if you use a proxy like /api/ml/forecast
+        const res = await fetch('/api/forecast?limit=30');
+
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status} ${res.statusText}`);
+        }
+
+        const data = await res.json();
+
+        const parsed: HyacinthForecastPoint[] = data.map((row: any) => ({
+          date: row.ds,            // column names from hyacinth_forecast.csv
+          coverage: row.yhat,
+          lower: row.yhat_lower,
+          upper: row.yhat_upper,
+        }));
+
+        setForecast(parsed);
+      } catch (err: any) {
+        console.error('Error loading hyacinth forecast', err);
+        setForecastError(err.message ?? 'Failed to load forecast');
+      } finally {
+        setForecastLoading(false);
+      }
+    }
+
+    loadForecast();
   }, []);
 
   // Calculate Water Quality Index for each buoy (memoized with simple dependency)
@@ -715,126 +766,148 @@ export function AdvancedAnalytics({
         </TabsContent>
 
         {/* AI Predictions */}
+                {/* AI Predictions – Hyacinth Coverage Forecast */}
         <TabsContent value="predictions" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {predictionModels.map((model, index) => (
-              <motion.div
-                key={model.parameter}
-                initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="glass-card border-0 shadow-professional">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center space-x-2">
-                        {getParameterIcon(model.parameter)}
-                        <span>{getParameterName(model.parameter)}</span>
-                      </CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={`${
-                          model.trend === 'improving' ? 'status-good' :
-                          model.trend === 'stable' ? 'bg-blue-100 text-blue-800' :
-                          'status-warning'
-                        }`}>
-                          {model.trend}
-                        </Badge>
-                        <Badge variant="outline">
-                          {model.accuracy}% accuracy
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Prediction Timeline */}
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Next Hour</span>
-                          <span className="font-semibold">{model.nextHour}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Next 6 Hours</span>
-                          <span className="font-semibold">{model.next6Hours}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Next 24 Hours</span>
-                          <span className="font-semibold">{model.next24Hours}</span>
-                        </div>
-                      </div>
-
-                      {/* Confidence Meter */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Confidence Level</span>
-                          <span>{model.confidence}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${model.confidence}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* AI Insights Summary */}
+          {/* Summary card */}
           <Card className="glass-card border-0 shadow-professional">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-blue-600" />
-                <span>AI-Generated Insights</span>
+                <Waves className="w-5 h-5 text-green-600" />
+                <span>Hyacinth Coverage Forecast</span>
               </CardTitle>
+              <p className="text-sm text-gray-600">
+                Forecast based on historical satellite hyacinth coverage and water quality data.
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {insights.slice(0, 5).map((insight, index) => (
-                  <motion.div
-                    key={insight.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="p-4 border border-gray-200 rounded-lg"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Badge className={`${
-                            insight.type === 'warning' ? 'status-warning' :
-                            insight.type === 'recommendation' ? 'bg-blue-100 text-blue-800' :
-                            'bg-purple-100 text-purple-800'
-                          }`}>
-                            {insight.type}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {Math.round(insight.confidence * 100)}% confidence
-                          </Badge>
-                        </div>
-                        <h4 className="font-medium text-gray-900">{insight.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                          <span>Timeframe: {insight.timeframe}</span>
-                          <span>Impact: {insight.impact}</span>
-                        </div>
+              {forecastLoading && (
+                <div className="text-sm text-gray-500">Loading forecast…</div>
+              )}
+
+              {forecastError && (
+                <div className="text-sm text-red-600">
+                  Failed to load forecast: {forecastError}
+                </div>
+              )}
+
+              {!forecastLoading && !forecastError && forecast.length > 0 && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Big metric cards */}
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-green-50 border border-green-100">
+                      <div className="text-xs text-gray-600 mb-1">
+                        Next 7 days average
                       </div>
-                      {insight.actionRequired && (
-                        <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-1" />
-                      )}
+                      <div className="text-3xl font-bold text-green-700">
+                        {Math.round(
+                          forecast
+                            .slice(-7)
+                            .reduce((s, p) => s + p.coverage, 0) /
+                            Math.min(7, forecast.length)
+                        )}
+                        %
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Estimated mean surface coverage
+                      </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
+                    <div className="p-4 rounded-xl bg-yellow-50 border border-yellow-100">
+                      <div className="text-xs text-gray-600 mb-1">
+                        Maximum predicted
+                      </div>
+                      <div className="text-3xl font-bold text-yellow-700">
+                        {Math.round(
+                          Math.max(...forecast.map((p) => p.coverage))
+                        )}
+                        %
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Worst-case coverage in forecast window
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Line/area chart */}
+                  <div className="lg:col-span-2 h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={forecast}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+                        <XAxis dataKey="date" stroke="var(--chart-1)" fontSize={10} />
+                        <YAxis
+                          stroke="var(--chart-1)"
+                          fontSize={10}
+                          tickFormatter={(v) => `${v}%`}
+                        />
+                        <Tooltip
+                          formatter={(value: any) => `${Math.round(value)}%`}
+                          labelFormatter={(label) => `Date: ${label}`}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="coverage"
+                          stroke="var(--chart-1)"
+                          fill="var(--chart-1)"
+                          fillOpacity={0.25}
+                          name="Forecast coverage"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Table of forecast values */}
+          {!forecastLoading && !forecastError && forecast.length > 0 && (
+            <Card className="glass-card border-0 shadow-professional">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <span>Forecast Details</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 border-b">
+                        <th className="py-2 pr-4">Date</th>
+                        <th className="py-2 pr-4">Expected coverage</th>
+                        <th className="py-2 pr-4">Lower bound</th>
+                        <th className="py-2 pr-4">Upper bound</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.slice(-14).map((row) => (
+                        <tr key={row.date} className="border-b last:border-0">
+                          <td className="py-2 pr-4">{row.date}</td>
+                          <td className="py-2 pr-4 font-medium">
+                            {row.coverage.toFixed(1)}%
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600">
+                            {row.lower.toFixed(1)}%
+                          </td>
+                          <td className="py-2 pr-4 text-gray-600">
+                            {row.upper.toFixed(1)}%
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
+
+
       </Tabs>
         </div>
       </div>
     </MobileLayout>
   );
 }
+
+// ⬇️ add this as the very last line in AdvancedAnalytics.tsx
+export default AdvancedAnalytics;

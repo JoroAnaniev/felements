@@ -56,14 +56,16 @@ export default defineConfig({
     outDir: 'build',
   },
   server: {
-    port: 3000,
-    open: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3333',
-        changeOrigin: true,
-        // rewrite: (path) => path.replace(/^\/api/, ''), // gebruik dit alleen als je backend GEEN /api prefix heeft
-      },
+  port: 3000,
+  open: true,
+  proxy: {
+    '/api': {
+      target: 'http://127.0.0.1:8000', // FastAPI port
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api/, ''), // optional, if your FastAPI doesn't use /api prefix
     },
   },
+},
+
 });
+
